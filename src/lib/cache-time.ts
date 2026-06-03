@@ -35,15 +35,16 @@ export function formatRelativeTimestamp(iso: string, now: Date = new Date()): st
     ["day", 24 * 60 * 60],
     ["hour", 60 * 60],
     ["minute", 60],
-    ["second", 1],
   ];
   const fmt = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
   for (const [unit, secs] of units) {
-    if (abs >= secs || unit === "second") {
+    if (abs >= secs) {
       return fmt.format(Math.round(deltaSec / secs), unit);
     }
   }
-  return iso;
+  // Anything smaller than a minute (including an exact "now") falls through
+  // to seconds — the guaranteed terminal case, so no dead post-loop return.
+  return fmt.format(deltaSec, "second");
 }
 
 /**
