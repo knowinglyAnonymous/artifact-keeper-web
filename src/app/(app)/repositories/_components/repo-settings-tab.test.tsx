@@ -905,6 +905,75 @@ describe("RepoSettingsTab - Proxy Cache section (#448)", () => {
     expect(save).toHaveProperty("disabled", true);
   });
 
+  it("programmatically associates the validation error with the input (#448 a11y)", async () => {
+    const user = userEvent.setup();
+    render(<RepoSettingsTab repository={remoteRepo} />, {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Cache TTL (seconds)")).toHaveProperty(
+        "value",
+        "86400"
+      );
+    });
+
+    const input = screen.getByLabelText("Cache TTL (seconds)");
+    await user.clear(input);
+    await user.type(input, "9999999");
+
+    // The error must be exposed as a live alert and linked from the input
+    // via aria-describedby so screen-reader users hear the explanation, not
+    // just "invalid". Mirrors the reference pattern in #459.
+    const error = screen.getByRole("alert");
+    expect(error.id).toBe("settings-cache-ttl-error");
+    expect(input.getAttribute("aria-describedby")).toBe(
+      "settings-cache-ttl-error"
+    );
+
+    // When the value becomes valid again, the association is removed.
+    await user.clear(input);
+    await user.type(input, "3600");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(input.getAttribute("aria-describedby")).toBeNull();
+  });
+
+  it("disables Discard while a cache-TTL save is in flight (#448 review)", async () => {
+    // A never-resolving setCacheTtl keeps the mutation pending so we can
+    // assert the Discard button is guarded the same way Save is, preventing
+    // a Discard from racing an in-flight save.
+    let resolveSet: (() => void) | undefined;
+    mockSetCacheTtl.mockReturnValue(
+      new Promise<void>((resolve) => {
+        resolveSet = resolve;
+      })
+    );
+
+    const user = userEvent.setup();
+    render(<RepoSettingsTab repository={remoteRepo} />, {
+      wrapper: createWrapper(),
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Cache TTL (seconds)")).toHaveProperty(
+        "value",
+        "86400"
+      );
+    });
+
+    const input = screen.getByLabelText("Cache TTL (seconds)");
+    await user.clear(input);
+    await user.type(input, "3600");
+    await user.click(screen.getByRole("button", { name: /save changes/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /discard/i })
+      ).toHaveProperty("disabled", true);
+    });
+
+    // Let the in-flight mutation settle so the test doesn't leak a pending promise.
+    resolveSet?.();
+  });
+
   it("zero is rejected as out-of-range (backend min is 1)", async () => {
     const user = userEvent.setup();
     render(<RepoSettingsTab repository={remoteRepo} />, {

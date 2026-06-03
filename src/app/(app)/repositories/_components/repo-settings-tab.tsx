@@ -480,6 +480,11 @@ export function RepoSettingsTab({ repository }: RepoSettingsTabProps) {
                       aria-invalid={
                         cacheTtlOverride !== undefined && !cacheTtlIsValid
                       }
+                      aria-describedby={
+                        cacheTtlOverride !== undefined && !cacheTtlIsValid
+                          ? "settings-cache-ttl-error"
+                          : undefined
+                      }
                     />
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">
@@ -493,7 +498,11 @@ export function RepoSettingsTab({ repository }: RepoSettingsTabProps) {
                       )}
                     </div>
                     {cacheTtlOverride !== undefined && !cacheTtlIsValid && (
-                      <p className="text-sm text-destructive">
+                      <p
+                        id="settings-cache-ttl-error"
+                        role="alert"
+                        className="text-sm text-destructive"
+                      >
                         Must be a whole number between{" "}
                         {CACHE_TTL_MIN_SECONDS} and{" "}
                         {CACHE_TTL_MAX_SECONDS.toLocaleString()}.
@@ -594,7 +603,11 @@ export function RepoSettingsTab({ repository }: RepoSettingsTabProps) {
             <span>You have unsaved changes</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleDiscard}>
+            <Button
+              variant="outline"
+              onClick={handleDiscard}
+              disabled={saveMutation.isPending || setCacheTtlMutation.isPending}
+            >
               Discard
             </Button>
             <Button
