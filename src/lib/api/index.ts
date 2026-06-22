@@ -25,6 +25,8 @@ export { default as curationApi } from './curation';
 export type { CurationPackage, ListCurationParams } from './curation';
 export { default as signingApi } from './signing';
 export type { SigningKey, SigningConfig, CreateSigningKeyRequest } from './signing';
+export { default as syncPoliciesApi } from './sync-policies';
+export type { SyncPolicy, CreateSyncPolicyRequest } from './sync-policies';
 
 export type { LoginCredentials } from './auth';
 export type { ListRepositoriesParams } from './repositories';
